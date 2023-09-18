@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Currency Converter</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <center><h2>Currency Activation & Deactivation</h2></center>
+    <table>
+        <tr>
+            <th>Currency</th>
+            <th>Activation Status</th>
+            <th>Actions</th>
+        </tr>
+        {% for currency in currencies %}
+        <tr>
+            <td>{{ currency.name }}</td>
+            <td>{{ 'Activated' if currency.activated else 'Deactivated' }}</td>
+            <td>
+                <form class="activate-form" action="/activate" method="post">
+                    <input type="hidden" name="currency_code" value="{{ currency.code }}">
+                    <button type="submit" {% if currency.activated %}disabled{% endif %}>Activate</button>
+                </form>
+                <form class="deactivate-form" action="/deactivate" method="post">
+                    <input type="hidden" name="currency_code" value="{{ currency.code }}">
+                    <button type="submit" {% if not currency.activated %}disabled{% endif %}>Deactivate</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <center>
+    <h1>Updated Currencies Information</h1>
+    <table>
+        <tr>
+            <th> Currency code</th>
+
+        </tr>
+        {% for currency in currencies %}
+        <tr>
+            <td><marquee>{{currency}}</marquee></td>
+
+        </tr>
+        {% endfor %}
+    </table>
+        <table>
+
+            <h1>Currency Converter</h1>
+   <form action="/convert" method="post">
+        <tr><label for="amount">Amount:</label></tr>
+        <input type="number" name="amount" id="amount" required>
+        <br>
+        <label for="from_currency">From Currency:</label>
+        <select name="from_currency" id="from_currency" required>
+            {% for currency in currencies %}
+                {% if currency.activated %}
+                  <option value="{{ currency.code }}">{{ currency.name }}</option>
+                {% endif %}
+
+            {% endfor %}
+        </select>
+        <br>
+        <label for="to_currency">To Currency:</label>
+        <select name="to_currency" id="to_currency" required>
+            {% for currency in currencies %}
+                {% if currency.activated %}
+                    <option value="{{ currency.code  }}">{{ currency.name }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+        <br>
+        <button type="submit">Convert</button>
+
+       {% if result %}
+    <h2>Conversion Result:{{ amount }} {{ from_currency }} = {{ result }}{{ to_currency }}</multiple></h2>
+
+    {% endif %}
+    </form>
+
+
+
+            </table>
+</center>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
+<style>
+    td {
+  font-family: Arial, Helvetica, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+td, th {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+tr:nth-child(even){background-color: #f2f2f2;}
+
+tr:hover {background-color: #ddd;}
+
+th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: left;
+  background-color: #04AA6D;
+  color: white;
+}
+button {
+  padding: 2px 5px;
+  font-size: 14px;
+  text-align: center;
+  cursor: pointer;
+  outline: none;
+  color: #fff;
+  background-color: #04AA6D;
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 9px #999;
+}
+
+button:hover {background-color: #3e8e41}
+
+button:active {
+  background-color: #3e8e41;
+  box-shadow: 0 5px #666;
+  transform: translateY(4px);
+}
+label {
+  color: #B4886B;
+  font-weight: bold;
+  display: block;
+}
+
+</style>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+    const activateForms = document.getElementsByClassName("activate-form");
+    const deactivateForms = document.getElementsByClassName("deactivate-form");
+    Array.from(activateForms).forEach(function(form) {
+        form.addEventListener("submit", function(event) {
+            event.preventDefault();
+            const currencyCode = form.querySelector("input[name='currency_code']").value;
+            activateCurrency(currencyCode);
+        });
+    });
+    Array.from(deactivateForms).forEach(function(form) {
+        form.addEventListener("submit", function(event) {
+            event.preventDefault();
+            const currencyCode = form.querySelector("input[name='currency_code']").value;
+            deactivateCurrency(currencyCode);
+        });
+    });
+    const conversionForm = document.getElementById("conversion-form");
+    conversionForm.addEventListener("submit", function(event) {
+    event.preventDefault();
+     const amount = parseFloat(conversionForm.querySelector("input[name='amount']").value);
+     const fromCurrency = conversionForm.querySelector("select[name='from_currency']").value;
+        const toCurrency = conversionForm.querySelector("select[name='to_currency']").value;
+        convertCurrency(amount, fromCurrency, toCurrency);
+    });
+    function activateCurrency(currencyCode) {
+        fetch('/activate', {
+            method: 'POST',
+            body: new URLSearchParams({
+                'currency_code': currencyCode
+            })
+        })
+        .then(response => response.text())
+        .then(data => {
+            document.documentElement.innerHTML = data;
+        })
+        .catch(error => console.log(error));
+    }
+ function deactivateCurrency(currencyCode) {
+        fetch('/deactivate', {
+            method: 'POST',
+            body: new URLSearchParams({
+                'currency_code': currencyCode
+            })
+        })
+        .then(response => response.text())
+        .then(data => {
+            document.documentElement.innerHTML = data;
+        })
+        .catch(error => console.log(error));
+
+    }
+});
+ function convertCurrency(amount, fromCurrency, toCurrency) {
+        fetch('/convert', {
+            method: 'POST',
+            body: new URLSearchParams({
+                'amount': amount,
+                'from_currency': fromCurrency,
+                'to_currency': toCurrency
+            })
+        })
+        .then(response => response.text())
+        .then(data => {
+            document.documentElement.innerHTML = data;
+        })
+        .catch(error => console.log(error));
+    }
+});
+
+</script>
